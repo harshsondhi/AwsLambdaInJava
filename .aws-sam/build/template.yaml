@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'ordersapi
+
+  Sample SAM Template for ordersapi
+
+  '
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: java11
+    Architectures:
+    - x86_64
+    MemorySize: 512
+    Environment:
+      Variables:
+        ORDERS_TABLE:
+          Ref: OrderTable
+        CUSTOMERS_TABLE:
+          Ref: CustomerTable
+Resources:
+  OrderTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: Number
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  CustomerTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: Number
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  CreateOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CreateOrderFunction
+      Handler: com.sondhi.harsh.api.CreateOrderLambda::createOrder
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: OrderTable
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: post
+    Metadata:
+      SamResourceId: CreateOrderFunction
+  CreateUstomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CreateUstomerFunction
+      Handler: com.sondhi.harsh.api.CreateCustomerLambda::createCustomer
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: CustomerTable
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /customers
+            Method: post
+    Metadata:
+      SamResourceId: CreateUstomerFunction
+  ReadOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ReadOrderFunction
+      Handler: com.sondhi.harsh.api.ReadOrderLambda::getOrder
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: OrderTable
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: GET
+    Metadata:
+      SamResourceId: ReadOrderFunction
+  ReadCustomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ReadCustomerFunction
+      Handler: com.sondhi.harsh.api.ReadCustomerLambda::getCustomer
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: CustomerTable
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /customers
+            Method: GET
+    Metadata:
+      SamResourceId: ReadCustomerFunction
+Outputs:
+  CreateOrdersApi:
+    Description: API Gateway endpoint URL for Prod stage for CreateOrder function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/orders
+  OrderTable:
+    Description: Order Table
+    Value:
+      Ref: OrderTable
+  CreateOrderFunction:
+    Description: Create Order Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - CreateOrderFunction
+      - Arn
+  CreateOrderFunctionIamRole:
+    Description: Implicit IAM Role created for Create Order function
+    Value:
+      Fn::GetAtt:
+      - CreateOrderFunctionRole
+      - Arn
+  CreateCustomersApi:
+    Description: API Gateway endpoint URL for Prod stage for CreateOrder function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/customers
+  CustomerTable:
+    Description: Customer Table
+    Value:
+      Ref: CustomerTable
+  CreateCustomerFunction:
+    Description: Create Order Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - CreateUstomerFunction
+      - Arn
+  CreateCustomerFunctionIamRole:
+    Description: Implicit IAM Role created for Create Order function
+    Value:
+      Fn::GetAtt:
+      - CreateOrderFunctionRole
+      - Arn
